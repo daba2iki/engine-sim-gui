@@ -1,0 +1,33 @@
+{
+  "build": {
+    "distDir": "../src",
+    "devPath": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "package": {
+    "productName": "EngineSimulator",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "fs": {
+        "readFile": true,
+        "writeFile": true,
+        "exists": true
+      }
+    },
+    "windows": [
+      {
+        "title": "Engine Simulator",
+        "width": 1200,
+        "height": 800,
+        "decorations": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}

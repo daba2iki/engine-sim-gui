@@ -1,0 +1,34 @@
+:root {
+  /* アクセント色 */
+  --accent-color: #FFC81E;
+  --accent-hover: #FFD54A;
+  --accent-active: #E6B000;
+  
+  /* 背景色 */
+  --background-color: #FFFFFF;
+  --sidebar-background: #F7F7F5;
+  --card-background: #FAFAFA;
+  
+  /* 文字色 */
+  --primary-text: #333333;
+  --secondary-text: #999999;
+  --accent-text: #1A1A1A;
+  --selected-text: #B38600;
+  
+  /* 区切り線 */
+  --border-color: #EEEEEE;
+  
+  /* 角丸 */
+  --border-radius: 8px;
+  
+  /* 余白 */
+  --spacing-xxs: 4px;
+  --spacing-xs: 8px;
+  --spacing-s: 16px;
+  --spacing-m: 24px;
+  --spacing-l: 32px;
+  --spacing-xl: 40px;
+  
+  /* フォント */
+  --font-family: "Microsoft YaHei UI", "Segoe UI", sans-serif;
+}
