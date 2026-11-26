@@ -53,16 +53,25 @@ const filtered = computed(() => {
 const changedCount = computed(() => params.value.filter(p=>JSON.stringify(p.value)!==JSON.stringify(p.default)).length)
 
 function isChanged(p: Param){ return JSON.stringify(p.value)!==JSON.stringify(p.default) }
+const savePath = ref('sample/sample.json')
 function save() {
-  const payload = JSON.stringify({name: params.value.find(p=>p.key==='engine_name')?.value||'sample', parameters: params.value})
-  // Tauri command placeholder
+  const payload = JSON.stringify({name: params.value.find(p=>p.key==='engine_name')?.value||'sample', parameters: params.value}, null, 2)
+  invoke('write_json', { path: savePath.value, content: payload })
 }
 function reset() {
   params.value.forEach(p=>p.value=p.default)
 }
 
 onMounted(async ()=>{
-  // if Tauri available, try to load sample file
+  try {
+    const raw = await invoke<string>('read_json', { path: 'sample/sample.json' })
+    const data = JSON.parse(raw)
+    if (Array.isArray(data.parameters)) {
+      params.value = data.parameters
+    }
+  } catch (e) {
+    console.warn('Could not load sample.json, using built-in sample', e)
+  }
 })
 </script>
 
