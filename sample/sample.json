@@ -1,0 +1,24 @@
+{
+  "name": "sample-engine",
+  "parameters": [
+    {
+      "key": "starter_torque",
+      "label": "スタータートルク",
+      "type": "number",
+      "value": 70,
+      "default": 70,
+      "unit": "lb·ft",
+      "description": "セルがクランクを回す力。",
+      "category": "基本"
+    },
+    {
+      "key": "vtec_enabled",
+      "label": "VTECを有効化",
+      "type": "bool",
+      "value": false,
+      "default": false,
+      "description": "true にすると高回転側カムへ切り替えます。",
+      "category": "カム・バルブ"
+    }
+  ]
+}
