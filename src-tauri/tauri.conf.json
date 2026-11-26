@@ -4,8 +4,9 @@
   "version": "0.1.0",
   "identifier": "com.enginesim.gui",
   "build": {
-    "beforeDevCommand": "vite dev",
-    "beforeBuildCommand": "vite build",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:1420",
     "distDir": "../dist"
   },
   "app": {
@@ -14,6 +15,9 @@
         "title": "Engine Sim GUI",
         "width": 1200,
         "height": 800,
+        "minWidth": 960,
+        "minHeight": 600,
+        "resizable": true,
         "decorations": false
       }
     ],

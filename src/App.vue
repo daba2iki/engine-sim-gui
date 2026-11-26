@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { NConfigProvider, NButton } from 'naive-ui'
-import { invoke } from '@tauri-apps/api'
+import { invoke } from '@tauri-apps/api/core'
 import TitleBar from './components/TitleBar.vue'
 import Sidebar from './components/Sidebar.vue'
 import ParameterCard from './components/ParameterCard.vue'
@@ -133,7 +133,7 @@ onMounted(async () => {
     Input: {
       borderRadius: '8px',
       borderFocus: 'var(--accent)',
-      boxShadowFocus: '0 0 0 2px rgba(255, 200, 30, 0.20)',
+      boxShadowFocus: '0 0 0 2px var(--focus-ring)',
       colorFocus: 'var(--selected-bg)'
     },
     InputNumber: {
@@ -143,9 +143,9 @@ onMounted(async () => {
       railColorActive: 'var(--accent)',
       railColorHoverActive: 'var(--accent-hover)',
       railColorPressedActive: 'var(--accent-active)',
-      nodeColorChecked: '#FFFFFF',
-      nodeColorCheckedHover: '#FFFFFF',
-      nodeColorCheckedPressed: '#FFFFFF'
+      nodeColorChecked: 'var(--white)',
+      nodeColorCheckedHover: 'var(--white)',
+      nodeColorCheckedPressed: 'var(--white)'
     },
     Slider: {
       railFillColor: 'var(--accent)',
@@ -158,7 +158,7 @@ onMounted(async () => {
       borderRadius: '8px',
       borderHover: 'var(--accent)',
       borderActive: 'var(--accent)',
-      boxShadowFocus: '0 0 0 2px rgba(255, 200, 30, 0.20)'
+      boxShadowFocus: '0 0 0 2px var(--focus-ring)'
     }
   }">
     <div class="app-shell">

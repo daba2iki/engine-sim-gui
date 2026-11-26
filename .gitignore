@@ -4,3 +4,5 @@ src-tauri/target
 src-tauri/gen
 .tauri
 .DS_Store
+vite.log
+*.log

@@ -12,6 +12,9 @@
   --text-secondary: #999999;
   --border: #EEEEEE;
   --hover-bg: #F2F2F2;
+  --white: #FFFFFF;
+  --close-hover: #E81123;
+  --focus-ring: rgba(255, 200, 30, 0.20);
   --radius: 8px;
   --radius-pill: 999px;
 }
@@ -85,8 +88,8 @@ html, body, #app {
 }
 
 .win-btn.close:hover {
-  background: #E81123;
-  color: #FFFFFF;
+  background: var(--close-hover);
+  color: var(--white);
 }
 
 .body {
@@ -251,4 +254,51 @@ html, body, #app {
 
 .pill {
   border-radius: var(--radius-pill) !important;
+}
+
+.n-button--primary-type,
+.n-button--primary-type:hover,
+.n-button--primary-type:focus,
+.n-button--primary-type:active {
+  color: var(--accent-text) !important;
+}
+
+.n-switch-rail--active,
+.n-switch-rail--active:hover,
+.n-switch-rail--active:active {
+  background-color: var(--accent) !important;
+}
+
+.n-switch-node--checked,
+.n-switch-node--checked:hover,
+.n-switch-node--checked:active {
+  background-color: var(--white) !important;
+}
+
+.n-slider-rail-fill,
+.n-slider-rail-fill:hover,
+.n-slider-rail-fill:active {
+  background-color: var(--accent) !important;
+}
+
+.n-slider-handle,
+.n-slider-handle:hover,
+.n-slider-handle:active {
+  background-color: var(--accent) !important;
+}
+
+.n-input--focus,
+.n-input__input-element:focus,
+.n-input-number__input-element:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--focus-ring) !important;
+}
+
+.n-select .n-base-selection,
+.n-select .n-base-selection__border {
+  border-radius: var(--radius);
+}
+
+.n-base-select-menu {
+  border-radius: var(--radius);
 }

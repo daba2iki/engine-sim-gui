@@ -56,7 +56,11 @@ async function windowAction(action: 'minimize' | 'maximize' | 'close') {
   background: var(--accent);
 }
 
-.search-input {
+.search-input :deep(.n-input-wrapper) {
   border-radius: 999px;
+}
+
+.search-input :deep(.n-input__input-element) {
+  color: var(--text-primary);
 }
 </style>
