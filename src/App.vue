@@ -1,128 +1,203 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { NConfigProvider, NInput, NButton, NCard, NSwitch, NSlider, NSelect, NTag } from 'naive-ui'
+import { computed, onMounted, ref } from 'vue'
+import { NConfigProvider, NButton } from 'naive-ui'
 import { invoke } from '@tauri-apps/api'
+import TitleBar from './components/TitleBar.vue'
+import Sidebar from './components/Sidebar.vue'
+import ParameterCard from './components/ParameterCard.vue'
+import type { EngineDoc, Param } from './types'
 
-const themeOverrides = {
-  common: {
-    primaryColor: '#FFC81E',
-    primaryColorHover: '#FFD54A',
-    primaryColorPressed: '#E6B000'
-  },
-  Button: { borderRadius: '8px', borderRadiusLarge: '999px' },
-  Card: { borderRadius: '8px' },
-  Input: { borderRadius: '8px' },
-  Select: { borderRadius: '8px' }
+const fallbackDoc: EngineDoc = {
+  name: 'sample-engine',
+  parameters: [
+    { key: 'engine_name', label: 'エンジン名', type: 'string', value: 'sample-engine', default: 'sample-engine', description: 'エンジンの識別名。', category: '基本' },
+    { key: 'cylinders', label: '気筒数', type: 'number', value: 4, default: 4, description: 'シリンダー気筒数。', category: '基本' },
+    { key: 'starter_torque', label: 'スタータートルク', type: 'number', value: 70, default: 70, unit: 'lb·ft', description: 'セルがクランクを回す力。', category: '基本' },
+    { key: 'vtec_enabled', label: 'VTECを有効化', type: 'bool', value: false, default: false, description: 'true にすると高回転側カムへ切り替えます。', category: 'カム・バルブ' }
+  ]
 }
 
-type ParamType = 'bool' | 'number' | 'string' | 'select'
-interface Param {
-  key: string
-  label: string
-  type: ParamType
-  value: any
-  default: any
-  unit?: string
-  description?: string
-  category?: string
-  options?: string[]
-}
-
-const sampleParams: Param[] = [
-  { key: 'starter_torque', label: 'スタータートルク', type: 'number', value: 70, default: 70, unit: 'lb·ft', description: 'セルがクランクを回す力。', category: '基本' },
-  { key: 'starter_speed', label: 'スターター回転数', type: 'number', value: 500, default: 500, unit: 'rpm', description: '始動時の目標回転数。', category: '基本' },
-  { key: 'throttle_gamma', label: 'スロットル応答', type: 'number', value: 2.0, default: 2.0, unit: '係数', description: '大きいほど低開度が穏やかになります。', category: '基本' },
-  { key: 'vtec_enabled', label: 'VTECを有効化', type: 'bool', value: false, default: false, description: 'true にすると高回転側カムへ切り替えます。', category: 'カム・バルブ' },
-  { key: 'stroke', label: 'ストローク', type: 'number', value: 86, default: 86, unit: 'mm', description: 'ピストン移動量。', category: '回転部' },
-  { key: 'engine_name', label: 'エンジン名', type: 'string', value: 'sample', default: 'sample', description: 'エンジンの識別名', category: '基本' },
-  { key: 'layout', label: 'レイアウト', type: 'select', value: '直列', default: '直列', description: 'エンジンレイアウト', category: '基本', options: ['直列','V型','水平対向'] },
-  { key: 'cylinders', label: '気筒数', type: 'number', value: 4, default: 4, description: '気筒数', category: '基本' },
-]
-
-const params = ref<Param[]>(sampleParams)
+const params = ref<Param[]>([])
 const search = ref('')
 const selectedCategory = ref('all')
-const categories = computed(() => ['all', ...Array.from(new Set(params.value.map(p=>p.category||'その他')))])
+const files = ref<string[]>([])
+const currentFile = ref<string | null>(null)
+const status = ref('サンプルを読み込みます…')
+
+const categories = computed(() => {
+  const cats = Array.from(new Set(params.value.map((p) => p.category || 'その他')))
+  return ['すべて', ...cats]
+})
+
 const filtered = computed(() => {
-  return params.value.filter(p => {
-    const matchSearch = !search.value || p.key.includes(search.value) || p.label.includes(search.value)
-    const matchCat = selectedCategory.value==='all' || p.category===selectedCategory.value
-    return matchSearch && matchCat
+  const q = search.value.trim().toLowerCase()
+  return params.value.filter((p) => {
+    const matchesCategory = selectedCategory.value === 'すべて' || (p.category || 'その他') === selectedCategory.value
+    const matchesSearch =
+      !q ||
+      p.key.toLowerCase().includes(q) ||
+      p.label.toLowerCase().includes(q) ||
+      (p.description || '').toLowerCase().includes(q)
+    return matchesCategory && matchesSearch
   })
 })
-const changedCount = computed(() => params.value.filter(p=>JSON.stringify(p.value)!==JSON.stringify(p.default)).length)
 
-function isChanged(p: Param){ return JSON.stringify(p.value)!==JSON.stringify(p.default) }
-const savePath = ref('sample/sample.json')
-function save() {
-  const payload = JSON.stringify({name: params.value.find(p=>p.key==='engine_name')?.value||'sample', parameters: params.value}, null, 2)
-  invoke('write_json', { path: savePath.value, content: payload })
-}
-function reset() {
-  params.value.forEach(p=>p.value=p.default)
+const changedCount = computed(() => params.value.filter(isChanged).length)
+
+function isChanged(p: Param) {
+  return JSON.stringify(p.value) !== JSON.stringify(p.default)
 }
 
-onMounted(async ()=>{
+function normalizeDoc(data: any): EngineDoc {
+  if (Array.isArray(data)) return { parameters: data as Param[] }
+  if (data && Array.isArray(data.parameters)) return data as EngineDoc
+  return fallbackDoc
+}
+
+function setParams(doc: EngineDoc) {
+  params.value = doc.parameters.map((p) => ({
+    ...p,
+    value: p.value,
+    default: p.default
+  }))
+}
+
+async function loadFile(file: string) {
+  currentFile.value = file
   try {
-    const raw = await invoke<string>('read_json', { path: 'sample/sample.json' })
-    const data = JSON.parse(raw)
-    if (Array.isArray(data.parameters)) {
-      params.value = data.parameters
-    }
+    const raw = await invoke<string>('read_json', { path: file })
+    setParams(normalizeDoc(JSON.parse(raw)))
+    status.value = `${file} を読み込みました`
   } catch (e) {
-    console.warn('Could not load sample.json, using built-in sample', e)
+    const message = e instanceof Error ? e.message : String(e)
+    console.warn('Tauri load failed, trying browser fallback', message)
+    try {
+      const res = await fetch(file)
+      setParams(normalizeDoc(await res.json()))
+      status.value = `${file} を読み込みました (fallback)`
+    } catch (fallbackError) {
+      setParams(fallbackDoc)
+      status.value = `読み込みに失敗しました: ${message}`
+    }
   }
+}
+
+async function save() {
+  const payload = JSON.stringify({ name: params.value.find((p) => p.key === 'engine_name')?.value || 'engine', parameters: params.value }, null, 2)
+  const target = currentFile.value || 'sample/sample.json'
+  try {
+    await invoke('write_json', { path: target, content: payload })
+    status.value = `${target} に保存しました`
+  } catch (e) {
+    status.value = `保存に失敗しました: ${e instanceof Error ? e.message : String(e)}`
+  }
+}
+
+function reset() {
+  params.value.forEach((p) => {
+    p.value = p.default
+  })
+  status.value = 'デフォルト値に戻しました'
+}
+
+async function listFiles() {
+  try {
+    const listed = await invoke<string[]>('list_json_files', { dir: 'sample' })
+    files.value = listed.map((f) => `sample/${f}`)
+  } catch {
+    files.value = ['sample/sample.json']
+  }
+}
+
+onMounted(async () => {
+  await listFiles()
+  await loadFile(files.value[0] || 'sample/sample.json')
 })
 </script>
 
 <template>
-  <n-config-provider :theme-overrides="themeOverrides">
-    <div style="height:100vh;display:flex;flex-direction:column;">
-      <header style="height:48px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:12px;user-select:none;">
-        <div data-tauri-drag-region style="font-weight:600;">Engine Sim GUI</div>
-        <div style="flex:1;display:flex;justify-content:center;">
-          <n-input v-model:value="search" placeholder="キー名で絞り込み" style="width:300px;border-radius:999px;" />
-        </div>
-        <div style="display:flex;gap:4px;">
-          <n-button size="small" @click="window.close()">×</n-button>
-        </div>
-      </header>
-      <div style="flex:1;display:flex;overflow:hidden;">
-        <aside style="width:200px;background:var(--sidebar-bg);border-right:1px solid var(--border);overflow:auto;padding:8px;">
-          <div v-for="cat in categories" :key="cat" style="padding:6px 8px;cursor:pointer;border-radius:6px;margin-bottom:4px;"
-            :style="{background:selectedCategory===cat?'var(--selected-bg)':'transparent',color:selectedCategory===cat?'var(--selected-text)':'#333'}"
-            @click="selectedCategory=cat">{{ cat }}</div>
-        </aside>
-        <main style="flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;">
-          <n-card v-for="p in filtered" :key="p.key" :title="p.label" style="border-left:4px solid transparent;"
-            :style="{borderLeftColor:isChanged(p)?'var(--accent)':'transparent',background:'var(--card-bg)'}">
-            <template #header>
-              <div style="font-size:14px;">{{ p.key }}</div>
-              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">{{ p.description }}</div>
-            </template>
-            <div style="display:flex;align-items:center;gap:12px;">
-              <div style="flex:1;">
-                <n-switch v-if="p.type==='bool'" v-model:value="p.value" />
-                <div v-else-if="p.type==='number'" style="display:flex;gap:8px;align-items:center;">
-                  <n-slider v-model:value="p.value" :min="0" :max="1000" style="flex:1"/>
-                  <n-input-number v-model:value="p.value" style="width:100px"/>
-                  <span v-if="p.unit" style="font-size:12px;color:var(--text-secondary)">{{ p.unit }}</span>
-                </div>
-                <n-input v-else-if="p.type==='string'" v-model:value="p.value" />
-                <n-select v-else-if="p.type==='select'" v-model:value="p.value" :options="p.options?.map(o=>({label:o,value:o}))" />
-              </div>
-              <n-tag v-if="isChanged(p)" type="warning" size="small">変更</n-tag>
-            </div>
-          </n-card>
+  <NConfigProvider :theme-overrides="{
+    common: {
+      primaryColor: 'var(--accent)',
+      primaryColorHover: 'var(--accent-hover)',
+      primaryColorPressed: 'var(--accent-active)',
+      primaryColorSuppl: 'var(--accent-hover)'
+    },
+    Button: {
+      borderRadius: '8px',
+      colorPrimary: 'var(--accent-text)',
+      colorPrimaryHover: 'var(--accent-text)',
+      colorPrimaryPressed: 'var(--accent-text)',
+      colorFocus: 'var(--accent-text)'
+    },
+    Input: {
+      borderRadius: '8px',
+      borderFocus: 'var(--accent)',
+      boxShadowFocus: '0 0 0 2px rgba(255, 200, 30, 0.20)',
+      colorFocus: 'var(--selected-bg)'
+    },
+    InputNumber: {
+      borderRadius: '8px'
+    },
+    Switch: {
+      railColorActive: 'var(--accent)',
+      railColorHoverActive: 'var(--accent-hover)',
+      railColorPressedActive: 'var(--accent-active)',
+      nodeColorChecked: '#FFFFFF',
+      nodeColorCheckedHover: '#FFFFFF',
+      nodeColorCheckedPressed: '#FFFFFF'
+    },
+    Slider: {
+      railFillColor: 'var(--accent)',
+      railFillColorHover: 'var(--accent-hover)',
+      handleColor: 'var(--accent)',
+      handleColorHover: 'var(--accent-hover)',
+      handleColorPressed: 'var(--accent-active)'
+    },
+    Select: {
+      borderRadius: '8px',
+      borderHover: 'var(--accent)',
+      borderActive: 'var(--accent)',
+      boxShadowFocus: '0 0 0 2px rgba(255, 200, 30, 0.20)'
+    }
+  }">
+    <div class="app-shell">
+      <TitleBar v-model:search="search" />
+
+      <div class="body">
+        <Sidebar
+          :files="files"
+          :current-file="currentFile"
+          :categories="categories"
+          :selected-category="selectedCategory"
+          @select-file="loadFile"
+          @select-category="selectedCategory = $event"
+        />
+
+        <main class="main">
+          <ParameterCard
+            v-for="p in filtered"
+            :key="p.key"
+            :param="p"
+            :changed="isChanged(p)"
+            @update:value="(v: Param['value']) => (p.value = v)"
+          />
+          <div v-if="filtered.length === 0" class="empty-state">
+            表示できる項目がありません。検索条件やカテゴリを確認してください。
+          </div>
         </main>
       </div>
-      <footer style="height:64px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#fff;">
-        <div>変更件数: {{ changedCount }}</div>
-        <div style="display:flex;gap:8px;">
-          <n-button type="primary" style="border-radius:999px;" @click="save">保存</n-button>
-          <n-button @click="reset">リセット</n-button>
+
+      <footer class="actionbar">
+        <div class="actionbar-left">
+          <span class="status-text">{{ status }}</span>
+          <span class="status-text">変更件数: {{ changedCount }}</span>
+        </div>
+        <div class="actions">
+          <NButton @click="reset">リセット</NButton>
+          <NButton type="primary" class="pill" @click="save">保存</NButton>
         </div>
       </footer>
     </div>
-  </n-config-provider>
+  </NConfigProvider>
 </template>
