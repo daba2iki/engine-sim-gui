@@ -6,6 +6,54 @@ import TitleBar from './components/TitleBar.vue'
 import Sidebar from './components/Sidebar.vue'
 import ParameterCard from './components/ParameterCard.vue'
 import type { EngineDoc, Param } from './types'
+import { palette } from './theme'
+
+// Naive UI needs literal colors here (it computes shades at runtime; CSS vars crash it).
+const themeOverrides = {
+  common: {
+    primaryColor: palette.accent,
+    primaryColorHover: palette.accentHover,
+    primaryColorPressed: palette.accentActive,
+    primaryColorSuppl: palette.accentHover
+  },
+  Button: {
+    borderRadius: '8px',
+    colorPrimary: palette.accentText,
+    colorPrimaryHover: palette.accentText,
+    colorPrimaryPressed: palette.accentText,
+    colorFocus: palette.accentText
+  },
+  Input: {
+    borderRadius: '8px',
+    borderFocus: palette.accent,
+    boxShadowFocus: `0 0 0 2px ${palette.focusRing}`,
+    colorFocus: palette.selectedBg
+  },
+  InputNumber: {
+    borderRadius: '8px'
+  },
+  Switch: {
+    railColorActive: palette.accent,
+    railColorHoverActive: palette.accentHover,
+    railColorPressedActive: palette.accentActive,
+    nodeColorChecked: palette.white,
+    nodeColorCheckedHover: palette.white,
+    nodeColorCheckedPressed: palette.white
+  },
+  Slider: {
+    railFillColor: palette.accent,
+    railFillColorHover: palette.accentHover,
+    handleColor: palette.accent,
+    handleColorHover: palette.accentHover,
+    handleColorPressed: palette.accentActive
+  },
+  Select: {
+    borderRadius: '8px',
+    borderHover: palette.accent,
+    borderActive: palette.accent,
+    boxShadowFocus: `0 0 0 2px ${palette.focusRing}`
+  }
+}
 
 const fallbackDoc: EngineDoc = {
   name: 'sample-engine',
@@ -116,51 +164,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <NConfigProvider :theme-overrides="{
-    common: {
-      primaryColor: 'var(--accent)',
-      primaryColorHover: 'var(--accent-hover)',
-      primaryColorPressed: 'var(--accent-active)',
-      primaryColorSuppl: 'var(--accent-hover)'
-    },
-    Button: {
-      borderRadius: '8px',
-      colorPrimary: 'var(--accent-text)',
-      colorPrimaryHover: 'var(--accent-text)',
-      colorPrimaryPressed: 'var(--accent-text)',
-      colorFocus: 'var(--accent-text)'
-    },
-    Input: {
-      borderRadius: '8px',
-      borderFocus: 'var(--accent)',
-      boxShadowFocus: '0 0 0 2px var(--focus-ring)',
-      colorFocus: 'var(--selected-bg)'
-    },
-    InputNumber: {
-      borderRadius: '8px'
-    },
-    Switch: {
-      railColorActive: 'var(--accent)',
-      railColorHoverActive: 'var(--accent-hover)',
-      railColorPressedActive: 'var(--accent-active)',
-      nodeColorChecked: 'var(--white)',
-      nodeColorCheckedHover: 'var(--white)',
-      nodeColorCheckedPressed: 'var(--white)'
-    },
-    Slider: {
-      railFillColor: 'var(--accent)',
-      railFillColorHover: 'var(--accent-hover)',
-      handleColor: 'var(--accent)',
-      handleColorHover: 'var(--accent-hover)',
-      handleColorPressed: 'var(--accent-active)'
-    },
-    Select: {
-      borderRadius: '8px',
-      borderHover: 'var(--accent)',
-      borderActive: 'var(--accent)',
-      boxShadowFocus: '0 0 0 2px var(--focus-ring)'
-    }
-  }">
+  <NConfigProvider :theme-overrides="themeOverrides">
     <div class="app-shell">
       <TitleBar v-model:search="search" />
 

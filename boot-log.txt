@@ -1,0 +1,9 @@
+[start] probe:start 2026-11-27T16:49:12.814Z
+  href: http://127.0.0.1:1420/
+  UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0
+  hasTauriInternals: true
+[t2s] probe:start 2026-11-27T16:49:12.814Z
+  href: http://127.0.0.1:1420/
+  UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0
+  hasTauriInternals: true
+T+2s: #app children=1, html=6494, body children=3
