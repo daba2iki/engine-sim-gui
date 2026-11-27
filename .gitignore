@@ -6,3 +6,5 @@ src-tauri/gen
 .DS_Store
 vite.log
 *.log
+boot-log.txt
+tauri-test.log
